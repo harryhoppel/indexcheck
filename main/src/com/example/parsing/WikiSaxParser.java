@@ -10,8 +10,8 @@ import java.util.List;
 
 public class WikiSaxParser implements WikiParser {
     @Override
-    public List<WikiDocument> parseDocuments(String path) {
-        List<WikiDocument> documents = new ArrayList<>();
+    public List<WikiIntactDocument> parseDocuments(String path) {
+        List<WikiIntactDocument> documents = new ArrayList<>();
         SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
         try {
             SAXParser saxParser = saxParserFactory.newSAXParser();

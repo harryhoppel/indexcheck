@@ -1,0 +1,18 @@
+<wiki>
+    <page>
+        <id>1</id>
+        <text>Doc1</text>
+    </page>
+    <page>
+        <id>2</id>
+        <text>Doc2</text>
+    </page>
+    <page>
+        <id>3</id>
+        <text>Doc3</text>
+    </page>
+    <page>
+        <id>4</id>
+        <text>Doc4 with many .....     ............. punctuation characters</text>
+    </page>
+</wiki>
