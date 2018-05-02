@@ -1,4 +1,8 @@
-"C:\Program Files\Java\jdk-10.0.1\bin\java.exe" -Xmx16G -Xms16G "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2018.1.2\lib\idea_rt.jar=24105:C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2018.1.2\bin" -Dfile.encoding=UTF-8 -classpath C:\Users\vasil_000\IdeaProjects\indexcheck\out\production\main com.example.App
+i7 6800K
+
+"C:\Program Files\Java\jdk-10.0.1\bin\java.exe" -Xmx16G -Xms16G "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2018.1.2\lib\idea_rt.jar=24376:C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2018.1.2\bin" -Dfile.encoding=UTF-8 -classpath C:\Users\vasil_000\IdeaProjects\indexcheck\out\production\main com.example.App
+Total documents parsed from dump: 203031
+Documents to create index: 203031
 Processed 10000 items
 Processed 20000 items
 Processed 30000 items
@@ -19,7 +23,7 @@ Processed 170000 items
 Processed 180000 items
 Processed 190000 items
 Processed 200000 items
-Total documents size: 203031
+Total number of all characters in all documents to process: 1038460103
 Processed 4%
 Processed 9%
 Processed 14%
@@ -40,7 +44,7 @@ Processed 83%
 Processed 88%
 Processed 93%
 Processed 98%
-Indexing time: 95,988 ms (95 sec, 1 min)
+Indexing time: 94,179 ms (94 sec, 1 min)
 Dumped index entry 0 / 1,831,964
 Dumped index entry 10,000 / 1,831,964
 Dumped index entry 20,000 / 1,831,964
@@ -225,6 +229,6 @@ Dumped index entry 1,800,000 / 1,831,964
 Dumped index entry 1,810,000 / 1,831,964
 Dumped index entry 1,820,000 / 1,831,964
 Dumped index entry 1,830,000 / 1,831,964
-Time to dump index to disk: 34,489 ms (34 sec; 0 min)
+Time to dump index to disk: 32,407 ms (32 sec; 0 min)
 
 Process finished with exit code 0

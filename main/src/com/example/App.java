@@ -32,6 +32,10 @@ public class App {
 
     private static void createIndexFromScratch() throws IOException {
         List<WikiIntactDocument> intactDocuments = new WikiSaxParser().parseDocuments(WIKI_DUMP_PATH);
+        System.out.println("Total documents parsed from dump: " + intactDocuments.size());
+        intactDocuments = intactDocuments.subList(0, Math.min(DOCUMENTS_TO_PROCESS, intactDocuments.size()));
+        System.out.println("Documents to create index: " + intactDocuments.size());
+
         AtomicInteger progress = new AtomicInteger(0);
         List<WikiProcessedDocument> processedDocuments = intactDocuments
 //                .stream()
@@ -41,8 +45,13 @@ public class App {
                     return new WikiProcessedDocument(document);
                 })
                 .collect(Collectors.toList());
-        System.out.println("Total documents size: " + intactDocuments.size());
-        processedDocuments = processedDocuments.subList(0, Math.min(DOCUMENTS_TO_PROCESS, processedDocuments.size()));
+        int totalTextLength = processedDocuments
+                .parallelStream()
+                .map(pd -> pd.getProcessedText().length())
+                .reduce((a, b) -> a + b)
+                .orElse(-1);
+        System.out.println("Total number of all characters in all documents to process: " + totalTextLength);
+
         InvertedIndex invertedIndex = new MemoryInvertedIndex();
         int totalDocuments = processedDocuments.size();
         progress.set(0);
@@ -59,6 +68,7 @@ public class App {
         long totalTime = System.currentTimeMillis() - startTime;
         System.out.println(MessageFormat.format("Indexing time: {0} ms ({1} sec, {2} min)",
                 totalTime, totalTime / 1000, totalTime / 1000 / 60));
+
         invertedIndex.dumpToDisk(INDEX_PATH);
         long timeToDumpIndex = System.currentTimeMillis() - startTime - totalTime;
         System.out.println(MessageFormat.format("Time to dump index to disk: {0} ms ({1} sec; {2} min)",
