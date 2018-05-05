@@ -3,14 +3,19 @@ package com.example;
 import com.example.index.IndexDelta;
 import com.example.index.InvertedIndex;
 import com.example.index.MemoryInvertedIndex;
+import com.example.index.WordPosition;
 import com.example.parsing.WikiIntactDocument;
 import com.example.parsing.WikiProcessedDocument;
 import com.example.parsing.WikiSaxParser;
+import javafx.util.Pair;
 import org.tartarus.snowball.ext.russianStemmer;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -23,6 +28,8 @@ public class App {
     //        = "main/data/test-simple-docs.txt";
             = "C:\\Users\\vasil_000\\Downloads\\ruwiki-20180401-pages-meta-current1.xml-p4p311181";
     private static final String INDEX_PATH = "C:\\Users\\vasil_000\\Downloads\\index.txt";
+    private static final String DUMP_FILE_PATH = "C:\\Users\\vasil_000\\Downloads\\dump.txt";
+    private static final String RECREATED_DUMP = "C:\\Users\\vasil_000\\Downloads\\recreated_dump.txt";
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < TIMES_TO_CREATE_INDEX; i++) {
@@ -37,20 +44,9 @@ public class App {
         System.out.println("Documents to create index: " + intactDocuments.size());
 
         AtomicInteger progress = new AtomicInteger(0);
-        List<WikiProcessedDocument> processedDocuments = intactDocuments
-//                .stream()
-                .parallelStream()
-                .map(document -> {
-                    progress(progress, -1);
-                    return new WikiProcessedDocument(document);
-                })
-                .collect(Collectors.toList());
-        int totalTextLength = processedDocuments
-                .parallelStream()
-                .map(pd -> pd.getProcessedText().length())
-                .reduce((a, b) -> a + b)
-                .orElse(-1);
-        System.out.println("Total number of all characters in all documents to process: " + totalTextLength);
+        List<WikiProcessedDocument> processedDocuments = convertToProcessedDocuments(intactDocuments, progress);
+        calculateTotalTextSize(processedDocuments);
+        dumpProcessedDocuments(processedDocuments);
 
         InvertedIndex invertedIndex = new MemoryInvertedIndex();
         int totalDocuments = processedDocuments.size();
@@ -73,6 +69,77 @@ public class App {
         long timeToDumpIndex = System.currentTimeMillis() - startTime - totalTime;
         System.out.println(MessageFormat.format("Time to dump index to disk: {0} ms ({1} sec; {2} min)",
                 timeToDumpIndex, timeToDumpIndex / 1000, timeToDumpIndex / 1000 / 60));
+
+        dumpRecreatedDocumentsFromIndex(invertedIndex);
+    }
+
+    private static void dumpRecreatedDocumentsFromIndex(InvertedIndex invertedIndex) throws IOException {
+        long startTime = System.currentTimeMillis();
+        Map<Long, List<Pair<Integer, String>>> recreatedDocuments = new HashMap<>();
+        Set<String> allIndexedWords = invertedIndex.getAllWords();
+        for (String word : allIndexedWords) {
+            SortedSet<WordPosition> wordPositions = invertedIndex.getWordPositions(word);
+            for (WordPosition wordPosition : wordPositions) {
+                List<Pair<Integer, String>> positionsAndWords = recreatedDocuments.computeIfAbsent(wordPosition.getDocumentId(), i -> new ArrayList<>());
+                positionsAndWords.add(new Pair<>(wordPosition.getDocumentPosition(), word));
+            }
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(RECREATED_DUMP)))) {
+            List<Long> docIds = new ArrayList<>(recreatedDocuments.keySet());
+            docIds.sort(Long::compareTo);
+            for (Long docId : docIds) {
+                writer.write("" + docId + "\t");
+                List<Pair<Integer, String>> positionsAndWords = recreatedDocuments.get(docId);
+                positionsAndWords.sort(Comparator.comparingInt(Pair::getKey));
+                StringBuilder textBuilder = new StringBuilder();
+                for (Pair<Integer, String> positionAndWord : positionsAndWords) {
+                    textBuilder.append(positionAndWord.getValue()).append(' ');
+                }
+                if (textBuilder.length() > 0) {
+                    textBuilder.deleteCharAt(textBuilder.length() - 1);
+                }
+                textBuilder.append("\n");
+                writer.write(textBuilder.toString());
+            }
+        }
+        System.out.println("Total time to recreate all documents: " + (System.currentTimeMillis() - startTime));
+    }
+
+    private static List<WikiProcessedDocument> convertToProcessedDocuments(List<WikiIntactDocument> intactDocuments, AtomicInteger progress) {
+        return intactDocuments
+//                .stream()
+                .parallelStream()
+                .map(document -> {
+                    progress(progress, -1);
+                    return new WikiProcessedDocument(document);
+                })
+                .collect(Collectors.toList());
+    }
+
+    private static void dumpProcessedDocuments(List<WikiProcessedDocument> processedDocuments) throws IOException {
+        File dumpFile = new File(DUMP_FILE_PATH);
+        if (!dumpFile.exists()) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(dumpFile))) {
+                processedDocuments
+                        .forEach(pd -> {
+                            try {
+                                writer.write("" + pd.getId() + "\t" + pd.getProcessedText() + "\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+            }
+        }
+    }
+
+    private static void calculateTotalTextSize(List<WikiProcessedDocument> processedDocuments) {
+        int totalTextLength = processedDocuments
+                .parallelStream()
+                .map(pd -> pd.getProcessedText().length())
+                .reduce((a, b) -> a + b)
+                .orElse(-1);
+        System.out.println("Total number of all characters in all documents to process: " + totalTextLength);
     }
 
     private static void progress(AtomicInteger progress, int total) {

@@ -8,22 +8,46 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class MemoryInvertedIndex implements InvertedIndex {
-    private ConcurrentHashMap<String, SortedSet<WordPosition>> index = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Gut> index = new ConcurrentHashMap<>();
+
+    @Override
+    public Set<String> getAllWords() {
+        return new HashSet<>(index.keySet());
+    }
 
     @Override
     public SortedSet<WordPosition> getWordPositions(String word) {
-        return index.get(word);
+        Gut gut = null;
+        try {
+            gut = index.get(word);
+            gut.getLock().readLock().lock();
+            return gut.getPositions();
+        } finally {
+            if (gut != null) {
+                gut.getLock().readLock().unlock();
+            }
+        }
     }
 
     @Override
     public void addDelta(IndexDelta delta) {
         Map<String, List<WordPosition>> miniDeltas = delta.getMiniDeltas();
-        for (Map.Entry<String, List<WordPosition>> miniDelta : miniDeltas.entrySet()) {
-            String deltaWord = miniDelta.getKey();
-            SortedSet<WordPosition> wordPositions = index.computeIfAbsent(deltaWord, w -> new ConcurrentSkipListSet<>());
-            wordPositions.addAll(miniDelta.getValue());
+        List<String> wordsToAdd = new ArrayList<>(miniDeltas.keySet());
+        while (!wordsToAdd.isEmpty()) {
+            for (Iterator<String> iterator = wordsToAdd.iterator(); iterator.hasNext(); ) {
+                String deltaWord = iterator.next();
+                Gut gutForDelta = index.computeIfAbsent(deltaWord, w -> new Gut(new ReentrantReadWriteLock(), new ConcurrentSkipListSet<>()));
+                if (gutForDelta.getLock().writeLock().tryLock()) {
+                    gutForDelta.getPositions().addAll(miniDeltas.get(deltaWord));
+                    gutForDelta.getLock().writeLock().unlock();
+                    iterator.remove();
+                } else {
+                    Thread.yield();
+                }
+            }
         }
     }
 
@@ -51,6 +75,24 @@ public class MemoryInvertedIndex implements InvertedIndex {
                             wordNumber, indexWords.size()));
                 }
             }
+        }
+    }
+
+    private class Gut {
+        private final ReentrantReadWriteLock lock;
+        private final SortedSet<WordPosition> positions;
+
+        public Gut(ReentrantReadWriteLock lock, SortedSet<WordPosition> positions) {
+            this.lock = lock;
+            this.positions = positions;
+        }
+
+        public ReentrantReadWriteLock getLock() {
+            return lock;
+        }
+
+        public SortedSet<WordPosition> getPositions() {
+            return positions;
         }
     }
 }

@@ -2,7 +2,7 @@
   <configuration default="false" name="App" type="Application" factoryName="Application" nameIsGenerated="true">
     <option name="MAIN_CLASS_NAME" value="com.example.App" />
     <module name="main" />
-    <option name="VM_PARAMETERS" value="-Xmx16G -Xms16G" />
+    <option name="VM_PARAMETERS" value="-Xmx24G -Xms24G" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
     <extension name="coverage">
       <pattern>

@@ -11,11 +11,11 @@ public class WordPosition implements Comparable {
         this.documentPosition = documentPosition;
     }
 
-    long getDocumentId() {
+    public long getDocumentId() {
         return documentId;
     }
 
-    int getDocumentPosition() {
+    public int getDocumentPosition() {
         return documentPosition;
     }
 
