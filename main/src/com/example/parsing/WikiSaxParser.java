@@ -10,13 +10,13 @@ import java.util.List;
 
 public class WikiSaxParser implements WikiParser {
     @Override
-    public List<WikiIntactDocument> parseDocuments(String path) {
+    public List<WikiIntactDocument> parseDocuments(File path) {
         List<WikiIntactDocument> documents = new ArrayList<>();
         SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
         try {
             SAXParser saxParser = saxParserFactory.newSAXParser();
             WikiSaxParserHandler handler = new WikiSaxParserHandler(documents);
-            saxParser.parse(new BufferedInputStream(new FileInputStream(new File(path))), handler);
+            saxParser.parse(new BufferedInputStream(new FileInputStream(path)), handler);
         } catch (Exception e) {
             e.printStackTrace();
         }

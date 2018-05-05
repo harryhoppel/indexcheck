@@ -1,5 +1,6 @@
 package com.example.index;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 import java.util.SortedSet;
@@ -11,5 +12,5 @@ public interface InvertedIndex {
 
     void addDelta(IndexDelta delta);
 
-    void dumpToDisk(String path) throws IOException;
+    void dumpToDisk(File path) throws IOException;
 }

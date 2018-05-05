@@ -52,8 +52,8 @@ public class MemoryInvertedIndex implements InvertedIndex {
     }
 
     @Override
-    public void dumpToDisk(String path) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(path)))) {
+    public void dumpToDisk(File path) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
             List<String> indexWords = new ArrayList<>(index.keySet());
             indexWords.sort((o1, o2) -> -Integer.compare(getWordPositions(o1).size(), getWordPositions(o2).size()));
             for (int wordNumber = 0; wordNumber < indexWords.size(); wordNumber++) {
@@ -82,16 +82,16 @@ public class MemoryInvertedIndex implements InvertedIndex {
         private final ReentrantReadWriteLock lock;
         private final SortedSet<WordPosition> positions;
 
-        public Gut(ReentrantReadWriteLock lock, SortedSet<WordPosition> positions) {
+        Gut(ReentrantReadWriteLock lock, SortedSet<WordPosition> positions) {
             this.lock = lock;
             this.positions = positions;
         }
 
-        public ReentrantReadWriteLock getLock() {
+        ReentrantReadWriteLock getLock() {
             return lock;
         }
 
-        public SortedSet<WordPosition> getPositions() {
+        SortedSet<WordPosition> getPositions() {
             return positions;
         }
     }

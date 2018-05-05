@@ -26,10 +26,10 @@ public class App {
 
     private static final String WIKI_DUMP_PATH
     //        = "main/data/test-simple-docs.txt";
-            = "C:\\Users\\vasil_000\\Downloads\\ruwiki-20180401-pages-meta-current1.xml-p4p311181";
-    private static final String INDEX_PATH = "C:\\Users\\vasil_000\\Downloads\\index.txt";
-    private static final String DUMP_FILE_PATH = "C:\\Users\\vasil_000\\Downloads\\dump.txt";
-    private static final String RECREATED_DUMP = "C:\\Users\\vasil_000\\Downloads\\recreated_dump.txt";
+            = "Downloads\\ruwiki-20180401-pages-meta-current1.xml-p4p311181";
+    private static final String INDEX_PATH = "Downloads\\index.txt";
+    private static final String DUMP_FILE_PATH = "Downloads\\dump.txt";
+    private static final String RECREATED_DUMP = "Downloads\\recreated_dump.txt";
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < TIMES_TO_CREATE_INDEX; i++) {
@@ -38,7 +38,8 @@ public class App {
     }
 
     private static void createIndexFromScratch() throws IOException {
-        List<WikiIntactDocument> intactDocuments = new WikiSaxParser().parseDocuments(WIKI_DUMP_PATH);
+        List<WikiIntactDocument> intactDocuments = new WikiSaxParser().parseDocuments(
+                new File(System.getProperty("user.home"), WIKI_DUMP_PATH));
         System.out.println("Total documents parsed from dump: " + intactDocuments.size());
         intactDocuments = intactDocuments.subList(0, Math.min(DOCUMENTS_TO_PROCESS, intactDocuments.size()));
         System.out.println("Documents to create index: " + intactDocuments.size());
@@ -65,7 +66,7 @@ public class App {
         System.out.println(MessageFormat.format("Indexing time: {0} ms ({1} sec, {2} min)",
                 totalTime, totalTime / 1000, totalTime / 1000 / 60));
 
-        invertedIndex.dumpToDisk(INDEX_PATH);
+        invertedIndex.dumpToDisk(new File(System.getProperty("user.home"), INDEX_PATH));
         long timeToDumpIndex = System.currentTimeMillis() - startTime - totalTime;
         System.out.println(MessageFormat.format("Time to dump index to disk: {0} ms ({1} sec; {2} min)",
                 timeToDumpIndex, timeToDumpIndex / 1000, timeToDumpIndex / 1000 / 60));
@@ -85,7 +86,8 @@ public class App {
             }
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(RECREATED_DUMP)))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(
+                new File(System.getProperty("user.home"), RECREATED_DUMP)))) {
             List<Long> docIds = new ArrayList<>(recreatedDocuments.keySet());
             docIds.sort(Long::compareTo);
             for (Long docId : docIds) {
@@ -118,13 +120,24 @@ public class App {
     }
 
     private static void dumpProcessedDocuments(List<WikiProcessedDocument> processedDocuments) throws IOException {
-        File dumpFile = new File(DUMP_FILE_PATH);
+        File dumpFile = new File(System.getProperty("user.home"), DUMP_FILE_PATH);
         if (!dumpFile.exists()) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(dumpFile))) {
                 processedDocuments
                         .forEach(pd -> {
                             try {
-                                writer.write("" + pd.getId() + "\t" + pd.getProcessedText() + "\n");
+                                String processedText = pd.getProcessedText();
+                                StringBuilder processedStemmedText = new StringBuilder();
+                                russianStemmer russianStemmer = new russianStemmer();
+                                for (String word : processedText.split(" ")) {
+                                    russianStemmer.setCurrent(word);
+                                    russianStemmer.stem();
+                                    processedStemmedText.append(russianStemmer.getCurrent()).append(' ');
+                                }
+                                if (processedStemmedText.length() > 0) {
+                                    processedStemmedText.deleteCharAt(processedStemmedText.length() - 1);
+                                }
+                                writer.write("" + pd.getId() + "\t" + processedStemmedText + "\n");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
